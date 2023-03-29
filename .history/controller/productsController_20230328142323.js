@@ -165,11 +165,11 @@ exports.updateProduct = async (req, res) => {
         req.params.id,
         req.body
       );
+      const getAllProduct = await Product.find();
       if (getProduct) {
-        const getAllProduct = await Product.find();
         res.status(200).json({ success: true, data: getAllProduct });
       } else {
-        res.status(200).json({ success: false, state: "invalid ID" });
+        res.status(500).json({ success: false, state: "invalid ID" });
       }
     }
   } catch (err) {

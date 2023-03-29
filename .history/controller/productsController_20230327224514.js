@@ -16,6 +16,7 @@ exports.addProduct = async (req, res) => {
     const users = await User.findOne({ email: user.email });
     if (users && users.admin > 0) {
       const { name, img, imgBg, detail, state, price, rating } = req.body;
+
       const product = new Product({
         name,
         img,
@@ -31,11 +32,6 @@ exports.addProduct = async (req, res) => {
       res.status(200).json({
         success: true,
         data: getAllProduct,
-      });
-    } else {
-      res.status(200).json({
-        success: false,
-        message: "Unauthorization",
       });
     }
   } catch (error) {
@@ -149,28 +145,11 @@ exports.getAProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const token = req.headers.authentication;
-
-    if (!token) {
-      return res.status(200).json({
-        success: false,
-        message: "Unauthorization",
-      });
-    }
-    const key = "afawrfaefgaiada";
-    const user = jwt.verify(token, key);
-    const users = await User.findOne({ email: user.email });
-    if (users && users.admin > 0) {
-      const getProduct = await Product.findByIdAndUpdate(
-        req.params.id,
-        req.body
-      );
-      if (getProduct) {
-        const getAllProduct = await Product.find();
-        res.status(200).json({ success: true, data: getAllProduct });
-      } else {
-        res.status(200).json({ success: false, state: "invalid ID" });
-      }
+    const getProduct = await Product.findByIdAndUpdate(req.params.id, req.body);
+    if (getProduct) {
+      res.status(200).json({ success: true });
+    } else {
+      res.status(500).json({ success: false, state: "invalid ID" });
     }
   } catch (err) {
     res.status(500).json({ success: false, state: "invalid ID" });

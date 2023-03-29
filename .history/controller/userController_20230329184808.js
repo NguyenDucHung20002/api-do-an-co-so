@@ -285,8 +285,11 @@ exports.updatePurchaseUser = async (req, res) => {
     const user = jwt.verify(token, key);
     if (user) {
       const users = await User.findOne({ email: user.email });
+      console.log("users:", users);
+      console.log("users:", users.purchase);
       // const purchaseUser = await User.findById(req.params.id);
       const purchase = [...users.purchase, req.body];
+      console.log("purchase:", purchase);
       await User.findOneAndUpdate({ email: user.email }, { purchase });
       res.status(200).json({
         success: true,

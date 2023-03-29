@@ -271,38 +271,6 @@ exports.getPurchaseUser = async (req, res) => {
   }
 };
 
-exports.updatePurchaseUser = async (req, res) => {
-  try {
-    const token = req.headers.authentication;
-
-    if (!token) {
-      return res.status(200).json({
-        success: false,
-        message: "Unauthorization",
-      });
-    }
-    const key = "afawrfaefgaiada";
-    const user = jwt.verify(token, key);
-    if (user) {
-      const users = await User.findOne({ email: user.email });
-      // const purchaseUser = await User.findById(req.params.id);
-      const purchase = [...users.purchase, req.body];
-      await User.findOneAndUpdate({ email: user.email }, { purchase });
-      res.status(200).json({
-        success: true,
-        data: purchase,
-      });
-    } else {
-      res.status(200).json({
-        success: false,
-        message: "Unauthorization",
-      });
-    }
-  } catch (err) {
-    res.status(500).json({ success: false, state: "invalid ID" });
-  }
-};
-
 exports.updateCartUser = async (req, res) => {
   try {
     const token = req.headers.authentication;

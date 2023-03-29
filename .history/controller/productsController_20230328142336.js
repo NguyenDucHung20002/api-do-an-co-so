@@ -169,7 +169,7 @@ exports.updateProduct = async (req, res) => {
         const getAllProduct = await Product.find();
         res.status(200).json({ success: true, data: getAllProduct });
       } else {
-        res.status(200).json({ success: false, state: "invalid ID" });
+        res.status(500).json({ success: false, state: "invalid ID" });
       }
     }
   } catch (err) {

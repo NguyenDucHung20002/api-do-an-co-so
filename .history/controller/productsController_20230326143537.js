@@ -2,42 +2,23 @@ const Product = require("../models/productModel");
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 exports.addProduct = async (req, res) => {
+  const { name, img, imgBg, detail, state, price, rating } = req.body;
   try {
-    const token = req.headers.authentication;
-
-    if (!token) {
-      return res.status(200).json({
-        success: false,
-        message: "Unauthorization",
-      });
-    }
-    const key = "afawrfaefgaiada";
-    const user = jwt.verify(token, key);
-    const users = await User.findOne({ email: user.email });
-    if (users && users.admin > 0) {
-      const { name, img, imgBg, detail, state, price, rating } = req.body;
-      const product = new Product({
-        name,
-        img,
-        imgBg,
-        detail,
-        state,
-        price,
-        rating,
-      });
-      await product.save();
-      const getAllProduct = await Product.find();
-
-      res.status(200).json({
-        success: true,
-        data: getAllProduct,
-      });
-    } else {
-      res.status(200).json({
-        success: false,
-        message: "Unauthorization",
-      });
-    }
+    const product = new Product({
+      name,
+      img,
+      imgBg,
+      detail,
+      state,
+      price,
+      rating,
+    });
+    await product.save();
+    res.status(200).json({
+      success: true,
+      data: req.body,
+    });
+    console.log("data:", req.body);
   } catch (error) {
     console.log(JSON.stringify(error, null, 2));
     res.status(500).json({ state: "can't add product" });
@@ -99,13 +80,13 @@ exports.deleteProduct = async (req, res) => {
     const key = "afawrfaefgaiada";
     const user = jwt.verify(token, key);
     const users = await User.findOne({ email: user.email });
+    console.log("users:", users);
     if (users && users.admin > 0) {
       const getProduct = await Product.findByIdAndRemove(req.params.id);
-      const getAllProduct = await Product.find();
       if (getProduct) {
         res.status(200).json({
           success: true,
-          data: getAllProduct,
+          data: getProduct,
         });
       } else {
         res.status(500).json({ success: false, state: "invalid ID" });
@@ -149,28 +130,11 @@ exports.getAProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const token = req.headers.authentication;
-
-    if (!token) {
-      return res.status(200).json({
-        success: false,
-        message: "Unauthorization",
-      });
-    }
-    const key = "afawrfaefgaiada";
-    const user = jwt.verify(token, key);
-    const users = await User.findOne({ email: user.email });
-    if (users && users.admin > 0) {
-      const getProduct = await Product.findByIdAndUpdate(
-        req.params.id,
-        req.body
-      );
-      if (getProduct) {
-        const getAllProduct = await Product.find();
-        res.status(200).json({ success: true, data: getAllProduct });
-      } else {
-        res.status(200).json({ success: false, state: "invalid ID" });
-      }
+    const getProduct = await Product.findByIdAndUpdate(req.params.id, req.body);
+    if (getProduct) {
+      res.status(200).json({ success: true });
+    } else {
+      res.status(500).json({ success: false, state: "invalid ID" });
     }
   } catch (err) {
     res.status(500).json({ success: false, state: "invalid ID" });
@@ -204,20 +168,10 @@ exports.checkExistProduct = async (req, res) => {
     const key = "afawrfaefgaiada";
     const user = jwt.verify(token, key);
     const users = await User.findOne({ email: user.email });
-    const carts = users.carts.map((val) => val._id);
-    const getProduct = await Product.find({ _id: carts });
-    const identify = getProduct.map((val) => `${val._id}`);
-    console.log("identify:", identify);
-    let getCarts = [];
-    identify.forEach((val) => {
-      users.carts.forEach((cart) => {
-        if (val === cart._id) {
-          getCarts.push(cart);
-        }
-      });
-      console.log(getCarts);
-    });
-    res.status(200).json({ data: getCarts });
+    const carts = [...users.carts];
+    console.log("carts:", carts);
+    const getProduct = await Product.find(req.body);
+    res.status(200).json({ data: getProduct });
   } catch (err) {
     res.status(500).json({ success: false, state: "invalid ID" });
   }

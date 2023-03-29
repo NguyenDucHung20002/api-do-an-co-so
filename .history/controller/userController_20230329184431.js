@@ -287,7 +287,6 @@ exports.updatePurchaseUser = async (req, res) => {
       const users = await User.findOne({ email: user.email });
       // const purchaseUser = await User.findById(req.params.id);
       const purchase = [...users.purchase, req.body];
-      await User.findOneAndUpdate({ email: user.email }, { purchase });
       res.status(200).json({
         success: true,
         data: purchase,

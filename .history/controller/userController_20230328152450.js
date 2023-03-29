@@ -222,14 +222,11 @@ exports.checkAuthorization = async (req, res) => {
     }
     const key = "afawrfaefgaiada";
     const user = jwt.verify(token, key);
-    const email = user.email;
-    console.log("email:", email);
+    console.log("user:", user);
     if (user) {
-      const users = await User.findOne({ email });
-      console.log("users:", users);
       res.status(200).json({
         success: true,
-        data: users.admin,
+        data: user,
       });
     } else {
       res.status(200).json({
@@ -238,7 +235,7 @@ exports.checkAuthorization = async (req, res) => {
       });
     }
   } catch (err) {
-    res.status(500).json({ success: false, state: "Unauthorization" });
+    res.status(500).json({ success: false, state: "invalid ID" });
   }
 };
 
@@ -259,38 +256,6 @@ exports.getPurchaseUser = async (req, res) => {
       res.status(200).json({
         success: true,
         data: users.purchase,
-      });
-    } else {
-      res.status(200).json({
-        success: false,
-        message: "Unauthorization",
-      });
-    }
-  } catch (err) {
-    res.status(500).json({ success: false, state: "invalid ID" });
-  }
-};
-
-exports.updatePurchaseUser = async (req, res) => {
-  try {
-    const token = req.headers.authentication;
-
-    if (!token) {
-      return res.status(200).json({
-        success: false,
-        message: "Unauthorization",
-      });
-    }
-    const key = "afawrfaefgaiada";
-    const user = jwt.verify(token, key);
-    if (user) {
-      const users = await User.findOne({ email: user.email });
-      // const purchaseUser = await User.findById(req.params.id);
-      const purchase = [...users.purchase, req.body];
-      await User.findOneAndUpdate({ email: user.email }, { purchase });
-      res.status(200).json({
-        success: true,
-        data: purchase,
       });
     } else {
       res.status(200).json({

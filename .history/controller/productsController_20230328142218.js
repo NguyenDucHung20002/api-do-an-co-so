@@ -166,10 +166,9 @@ exports.updateProduct = async (req, res) => {
         req.body
       );
       if (getProduct) {
-        const getAllProduct = await Product.find();
-        res.status(200).json({ success: true, data: getAllProduct });
+        res.status(200).json({ success: true });
       } else {
-        res.status(200).json({ success: false, state: "invalid ID" });
+        res.status(500).json({ success: false, state: "invalid ID" });
       }
     }
   } catch (err) {
