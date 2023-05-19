@@ -5,6 +5,7 @@ const cors = require("cors");
 const user = require("./routes/user");
 const product = require("./routes/product");
 const statistic = require("./routes/statistic");
+const order = require("./routes/order");
 const { momo } = require("./test");
 // connect DB
 require("./database/connectDB");
@@ -28,6 +29,7 @@ app.use(express.json());
 app.use("/api", user);
 app.use("/api", product);
 app.use("/api", statistic);
+app.use("/api", order);
 app.post("/api/momo", momo);
 
 const PORT = process.env.PORT || 8000;

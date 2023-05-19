@@ -3,10 +3,10 @@ exports.momo = (requires, response) => {
   var secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
   var orderInfo = "pay with MoMo";
   var partnerCode = "MOMO";
-  var redirectUrl = requires.body.nextUrl;
-  var ipnUrl = requires.body.nextUrl;
+  var redirectUrl = requires.body?.nextUrl;
+  var ipnUrl = requires.body?.nextUrl;
   var requestType = "payWithMethod";
-  var amount = requires.body.total;
+  var amount = requires.body?.total;
   var orderId = partnerCode + new Date().getTime();
   var requestId = orderId;
   var extraData = "";
@@ -40,14 +40,12 @@ exports.momo = (requires, response) => {
     "&requestType=" +
     requestType;
   //puts raw signature
-  console.log("--------------------RAW SIGNATURE----------------");
   //signature
   const crypto = require("crypto");
   var signature = crypto
     .createHmac("sha256", secretKey)
     .update(rawSignature)
     .digest("hex");
-  console.log("--------------------SIGNATURE----------------");
 
   //json object send to MoMo endpoint
   const requestBody = JSON.stringify({
@@ -87,7 +85,9 @@ exports.momo = (requires, response) => {
       dataMoMo = {
         payUrl: JSON.parse(body).payUrl,
         amount: requires.body.total,
+        orderId: JSON.parse(body).orderId,
       };
+
       console.log("dataMoMo:", dataMoMo);
     });
     res.on("end", () => {

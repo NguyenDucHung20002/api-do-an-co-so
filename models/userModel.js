@@ -27,10 +27,7 @@ const UserSchema = new Schema(
       type: Array,
       require: true,
     },
-    purchase: {
-      type: Array,
-      require: true,
-    },
+
     likes: {
       type: Array,
       require: true,

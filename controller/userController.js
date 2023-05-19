@@ -8,15 +8,14 @@ exports.register = async (req, res) => {
   //   password,
   // });
   const salt = await bcrypt.genSaltSync(12);
-  hashedPassword = await bcrypt.hashSync(password, salt);
-  console.log("hashedPassword:", hashedPassword);
+  const hashedPassword = await bcrypt.hashSync(password, salt);
+
   try {
     const user = new User({
       email,
       username,
       password: hashedPassword,
       carts: [],
-      purchase: [],
       admin: 0,
       likes: [],
     });
@@ -27,7 +26,6 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.log(JSON.stringify(error, null, 2));
-    console.log();
     if (error.code === 11000) {
       res.status(400).json({
         success: false,
@@ -48,6 +46,7 @@ exports.login = async (req, res) => {
   }
 
   const user = await User.findOne({ email });
+  console.log("user:", user);
   if (!user) {
     return res.status(500).json({
       success: false,
@@ -86,39 +85,55 @@ exports.login = async (req, res) => {
 };
 
 exports.changePassword = async (req, res) => {
-  const { email, password, newPassword } = req.body;
+  try {
+    const token = req.headers.authentication;
+    const { password, newPassword } = req.body;
 
-  if (!email || !password) {
-    return res.status(500).json({
-      success: false,
-      message: "Invalid Input",
+    if (!token) {
+      return res.status(200).json({
+        success: false,
+        message: "Unauthorization",
+      });
+    }
+    const key = process.env.KEY;
+    const user = jwt.verify(token, key);
+    if (!user) {
+      return res.status(500).json({
+        success: false,
+        message: "Unauthorization",
+      });
+    }
+    const email = user.email;
+    const users = await User.findOne({ email });
+    if (!users) {
+      return res.status(500).json({
+        success: false,
+        message: "Invalid User",
+      });
+    }
+    const isMatch = bcrypt.compareSync(password, users.password);
+    console.log("isMatch:", isMatch);
+    if (!isMatch) {
+      return res.status(500).json({
+        success: false,
+        message: "Incorrect Password",
+      });
+    }
+
+    const salt = await bcrypt.genSaltSync(12);
+    const hashedPassword = await bcrypt.hashSync(newPassword, salt);
+    await users.update({ password: hashedPassword });
+    res.json({
+      success: true,
+      data: {
+        idUser: user._id,
+        email: user.email,
+        username: user.username,
+      },
     });
+  } catch (error) {
+    console.log("error:", error);
   }
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(500).json({
-      success: false,
-      message: "Invalid User",
-    });
-  }
-  const isMatch = bcrypt.compareSync(password, user.password);
-  if (!isMatch) {
-    return res.status(500).json({
-      success: false,
-      message: "Invalid User",
-    });
-  }
-  const salt = await bcrypt.genSaltSync(12);
-  hashedPassword = await bcrypt.hashSync(newPassword, salt);
-  await user.update({ password: hashedPassword });
-  res.json({
-    success: true,
-    data: {
-      idUser: user._id,
-      email: user.email,
-      username: user.username,
-    },
-  });
 };
 
 exports.getAllUser = async (req, res) => {
@@ -131,6 +146,36 @@ exports.getAllUser = async (req, res) => {
     res.status(200).json(users);
   } catch (err) {
     res.status(500).json(err);
+  }
+};
+
+exports.getAUser = async (req, res) => {
+  try {
+    const token = req.headers.authentication;
+
+    if (!token) {
+      return res.status(200).json({
+        success: false,
+        message: "Unauthorization",
+      });
+    }
+    const key = process.env.KEY;
+    const user = jwt.verify(token, key);
+    const email = user.email;
+    if (user) {
+      const users = await User.findOne({ email });
+      res.status(200).json({
+        success: true,
+        data: users,
+      });
+    } else {
+      res.status(200).json({
+        success: false,
+        message: "Unauthorization",
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, state: "invalid ID" });
   }
 };
 
@@ -210,9 +255,57 @@ exports.getLikeUser = async (req, res) => {
   }
 };
 
+exports.getUsers = async (req, res) => {
+  const limit = 6;
+  const page = req.query.page ? Number(req.query.page) * limit - limit : 0;
+  const name = req.headers.search;
+
+  if (name) {
+    try {
+      const users = (await User.find()).reverse();
+      const findData = users.filter((val) => {
+        return (
+          val.username.toLowerCase().includes(name.trim().toLowerCase()) ||
+          val.email.toLowerCase().includes(name.trim().toLowerCase()) ||
+          val._id.toString() === name.trim()
+        );
+      });
+      if (findData.length !== 0) {
+        const ignoreAdmin = findData.filter((val) => val.admin === 0);
+        const getLimit = ignoreAdmin.slice(page, page + limit);
+
+        return res.status(200).json({
+          success: true,
+          data: getLimit,
+          length: findData.length,
+        });
+      } else {
+        return res
+          .status(200)
+          .json({ success: false, state: "Input not found!" });
+      }
+    } catch (err) {
+      res.status(500).json({ success: false, state: "Something wrong!" });
+    }
+  } else {
+    try {
+      const users = (await User.find()).reverse();
+      const ignoreAdmin = users.filter((val) => val.admin === 0);
+      const usersPage = [...ignoreAdmin.slice(page, page + limit)];
+      res.status(200).json({
+        success: true,
+        data: usersPage,
+        length: usersPage.length,
+      });
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  }
+};
+
 exports.checkAuthorization = async (req, res) => {
   try {
-    const token = req.headers.authentication;
+    const token = req.params.authentication;
 
     if (!token) {
       return res.status(200).json({
@@ -223,10 +316,8 @@ exports.checkAuthorization = async (req, res) => {
     const key = process.env.KEY;
     const user = jwt.verify(token, key);
     const email = user.email;
-    console.log("email:", email);
     if (user) {
       const users = await User.findOne({ email });
-      console.log("users:", users);
       res.status(200).json({
         success: true,
         data: users.admin,
@@ -238,7 +329,7 @@ exports.checkAuthorization = async (req, res) => {
       });
     }
   } catch (err) {
-    res.status(500).json({ success: false, state: "Unauthorization" });
+    res.status(500).json({ success: false, state: "Unauthorization", err });
   }
 };
 

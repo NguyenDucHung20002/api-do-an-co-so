@@ -7,7 +7,9 @@ router.post("/login", userController.login);
 router.put("/changepassword", userController.changePassword);
 router.put("/purchase", userController.updatePurchaseUser);
 router.get("/user", userController.getAllUser);
-router.get("/user/check", userController.checkAuthorization);
+
+router.get("/users", userController.getUsers);
+router.get("/user/check/:authentication", userController.checkAuthorization);
 router.delete("/user/:id", userController.deleteUser);
 router.put("/user/:id", userController.updateUser);
 router.get("/cart/user/:id", userController.getCartUser);

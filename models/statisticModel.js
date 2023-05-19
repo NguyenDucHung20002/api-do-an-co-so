@@ -4,17 +4,13 @@ const Schema = mongoose.Schema;
 
 const StatisticSchema = new Schema(
   {
-    products: {
-      type: Number,
+    month: {
+      type: String,
+      require: true,
     },
     revenue: {
       type: Number,
     },
-
-    users: {
-      type: Number,
-    },
-
     websiteTraffic: {
       type: Number,
     },
