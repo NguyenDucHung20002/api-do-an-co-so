@@ -15,13 +15,13 @@ exports.addProduct = async (req, res) => {
     const user = jwt.verify(token, key);
     const users = await User.findOne({ email: user.email });
     if (users && users.admin > 0) {
-      const { name, img, imgBg, detail, state, price, rating } = req.body;
+      const { name, img, imgBg, detail, message, price, rating } = req.body;
       const product = {
         name,
         img,
         imgBg,
         detail,
-        state,
+        message,
         price,
         rating,
         sold: 0,
@@ -41,7 +41,7 @@ exports.addProduct = async (req, res) => {
     }
   } catch (error) {
     console.log(JSON.stringify(error, null, 2));
-    res.status(500).json({ state: "can't add product" });
+    res.status(500).json({ message: "can't add product" });
   }
 };
 
@@ -71,10 +71,10 @@ exports.getProduct = async (req, res) => {
       } else {
         return res
           .status(200)
-          .json({ success: false, state: "Input not found!" });
+          .json({ success: false, message: "Input not found!" });
       }
     } catch (err) {
-      res.status(500).json({ success: false, state: "Something wrong!" });
+      res.status(500).json({ success: false, message: "Something wrong!" });
     }
   } else {
     try {
@@ -116,7 +116,7 @@ exports.deleteProduct = async (req, res) => {
         const getProductPage = [...getAllProduct.splice(0, page)];
         res.status(200).json({ success: true, data: getProductPage });
       } else {
-        res.status(500).json({ success: false, state: "invalid ID" });
+        res.status(500).json({ success: false, message: "invalid ID" });
       }
     } else {
       res.status(200).json({
@@ -125,7 +125,7 @@ exports.deleteProduct = async (req, res) => {
       });
     }
   } catch (err) {
-    res.status(500).json({ success: false, state: "invalid ID" });
+    res.status(500).json({ success: false, message: "invalid ID" });
   }
 };
 
@@ -147,10 +147,10 @@ exports.getAProduct = async (req, res) => {
         data: product,
       });
     } else {
-      res.status(500).json({ success: false, state: "invalid ID" });
+      res.status(500).json({ success: false, message: "invalid ID" });
     }
   } catch (err) {
-    res.status(500).json({ success: false, state: "invalid ID" });
+    res.status(500).json({ success: false, message: "invalid ID" });
   }
 };
 
@@ -180,11 +180,11 @@ exports.updateProduct = async (req, res) => {
         const getProductPage = [...getAllProduct.splice(0, page)];
         res.status(200).json({ success: true, data: getProductPage });
       } else {
-        res.status(200).json({ success: false, state: "invalid ID" });
+        res.status(200).json({ success: false, message: "invalid ID" });
       }
     }
   } catch (err) {
-    res.status(500).json({ success: false, state: "invalid ID" });
+    res.status(500).json({ success: false, message: "invalid ID" });
   }
 };
 
@@ -195,10 +195,10 @@ exports.updateAllProduct = async (req, res) => {
     if (getProduct) {
       res.status(200).json({ success: true, data: getProduct });
     } else {
-      res.status(500).json({ success: false, state: "invalid ID" });
+      res.status(500).json({ success: false, message: "invalid ID" });
     }
   } catch (err) {
-    res.status(500).json({ success: false, state: "invalid ID" });
+    res.status(500).json({ success: false, message: "invalid ID" });
   }
 };
 
@@ -230,21 +230,37 @@ exports.checkExistProduct = async (req, res) => {
       res.status(200).json({ data: getCarts });
     }
   } catch (err) {
-    res.status(500).json({ success: false, state: "invalid ID" });
+    res.status(500).json({ success: false, message: "invalid ID" });
   }
 };
 
 exports.updateSoldProduct = async (req, res) => {
-  const sold = req.body;
+  try {
+    const sold = req.body;
+    const token = req.headers.authentication;
 
-  if (!sold || sold?.sold?.length === 0) {
-    return res.status(200).json({ success: false });
+    if (!token) {
+      return res.status(200).json({
+        success: false,
+        message: "Unauthorization",
+      });
+    }
+    const key = process.env.KEY;
+    const user = jwt.verify(token, key);
+    const users = await User.findOne({ email: user.email });
+    if (users) {
+      if (!sold || sold?.sold?.length === 0) {
+        return res.status(200).json({ success: false });
+      }
+      sold.sold.forEach(async (val) => {
+        const products = await Product.findById(val.id);
+        const sold = products.sold + val.quantity;
+        await Product.findByIdAndUpdate(val.id, { sold });
+      });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Can not update" });
   }
-  sold.sold.forEach(async (val) => {
-    const products = await Product.findById(val.id);
-    const sold = products.sold + val.quantity;
-    await Product.findByIdAndUpdate(val.id, { sold });
-  });
-
-  res.status(200).json({ success: true });
 };

@@ -1,4 +1,3 @@
-const Product = require("../models/productModel");
 const User = require("../models/userModel");
 const Order = require("../models/orderModel");
 const jwt = require("jsonwebtoken");
@@ -20,10 +19,9 @@ function authentication(req) {
 exports.addOrder = async (req, res) => {
   try {
     const user = authentication(req);
-    console.log("user:", user);
     const users = await User.findOne({ email: user.email });
 
-    if (users && users.admin === 0) {
+    if (users) {
       const {
         fullName,
         streetAddress,
@@ -36,15 +34,10 @@ exports.addOrder = async (req, res) => {
         products,
       } = req.body;
       const renameId = products.map((val) => {
-        return {
-          ProductId: val._id,
-          imgBg: val.imgBg,
-          name: val.name,
-          price: val.price,
-          state: val?.state,
-          total: val.total,
-          quantity: val.quantity,
-        };
+        const proruct = { ...val };
+        proruct["ProductId"] = val._id;
+        delete proruct._id;
+        return proruct;
       });
 
       const order = new Order({
@@ -58,8 +51,13 @@ exports.addOrder = async (req, res) => {
         orderId,
         total,
         products: renameId,
+        status: 0,
       });
       await order.save();
+      res.status(200).json({
+        success: true,
+        message: "Add successfully",
+      });
     } else {
       res.status(200).json({
         success: false,
@@ -68,7 +66,66 @@ exports.addOrder = async (req, res) => {
     }
   } catch (error) {
     console.log(JSON.stringify(error, null, 2));
-    res.status(500).json({ state: "can't add" });
+    res.status(500).json({ message: "can't add" });
+  }
+};
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const token = req.headers.authentication;
+    const { status } = req.body;
+    if (!token) {
+      return res.status(200).json({
+        success: false,
+        message: "Unauthorization",
+      });
+    }
+    const key = process.env.KEY;
+    const user = jwt.verify(token, key);
+    const users = await User.findOne({ email: user.email });
+    if (users && users.admin > 0) {
+      const getOrder = await Order.findByIdAndUpdate(req.params.id, { status });
+      if (getOrder) {
+        res
+          .status(200)
+          .json({ success: true, message: "Changed Successfully" });
+      } else {
+        res.status(200).json({ success: false, message: "invalid ID" });
+      }
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: "invalid ID" });
+  }
+};
+
+exports.deleteOrder = async (req, res) => {
+  try {
+    const token = req.headers.authentication;
+
+    if (!token) {
+      return res.status(200).json({
+        success: false,
+        message: "Unauthorization",
+      });
+    }
+    const key = process.env.KEY;
+    const user = jwt.verify(token, key);
+    const users = await User.findOne({ email: user.email });
+    if (users && users.admin > 0) {
+      const getOder = await Order.findByIdAndRemove(req.params.id);
+      if (getOder) {
+        res.status(200).json({ success: true, message: "Deleted" });
+      } else {
+        res.status(500).json({ success: false, message: "invalid ID" });
+      }
+    } else {
+      res.status(200).json({
+        success: false,
+        message: "Unauthorization",
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: "invalid ID" });
   }
 };
 
@@ -92,7 +149,7 @@ exports.getUserOrder = async (req, res) => {
     }
   } catch (error) {
     console.log("error:", error);
-    res.status(500).json({ state: "can't add" });
+    res.status(500).json({ message: "can't add" });
   }
 };
 
@@ -113,11 +170,12 @@ exports.recentOrders = async (req, res) => {
     } else {
       return res.status(200).json({
         success: false,
+        message: "Input not Found",
       });
     }
   } catch (error) {
     console.log("error:", error);
-    res.status(500).json({ state: "can't add" });
+    res.status(500).json({ message: "can't add" });
   }
 };
 
@@ -129,6 +187,7 @@ exports.searchOrders = async (req, res) => {
     const date = req.query.dateTime;
 
     const user = authentication(req);
+    const status = req.headers.status || 0;
     const users = await User.findOne({ email: user.email });
 
     if (users && users.admin > 0) {
@@ -138,14 +197,19 @@ exports.searchOrders = async (req, res) => {
       if (orderId) {
         // page = page + limit;
         data = orders.filter((val) => {
-          return val?.orderId.toString() === orderId;
+          return val?.orderId.toString() === orderId && val.status == status;
         });
       } else if (date) {
         data = orders.filter((val) => {
-          return val?.datetime.toLowerCase().includes(date.toLowerCase());
+          return (
+            val?.datetime.toLowerCase().includes(date.toLowerCase()) &&
+            val.status == status
+          );
         });
       } else {
-        data = [...orders];
+        data = orders.filter((val) => {
+          return val.status == status;
+        });
       }
       if (data.length !== 0) {
         const getLimit = data.slice(page, page + limit);
@@ -158,7 +222,7 @@ exports.searchOrders = async (req, res) => {
       } else {
         return res
           .status(200)
-          .json({ success: false, state: "Input not found!" });
+          .json({ success: false, message: "Input not found!" });
       }
     } else {
       return res.status(200).json({
@@ -168,6 +232,6 @@ exports.searchOrders = async (req, res) => {
     }
   } catch (error) {
     console.log("error:", error);
-    res.status(500).json({ state: "can't add" });
+    res.status(500).json({ message: "can't add" });
   }
 };

@@ -8,7 +8,6 @@ const OrderSchema = new Schema(
       type: String,
       require: true,
     },
-
     fullName: {
       type: String,
       require: true,
@@ -38,6 +37,10 @@ const OrderSchema = new Schema(
       require: true,
     },
     total: {
+      type: Number,
+      require: true,
+    },
+    status: {
       type: Number,
       require: true,
     },

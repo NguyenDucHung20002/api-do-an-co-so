@@ -7,7 +7,7 @@ router.post("/product", productController.addProduct);
 router.get("/product", productController.getProduct);
 router.get("/count/product", productController.countProduct);
 router.post("/check/product", productController.checkExistProduct);
-router.post("/sold", productController.updateSoldProduct);
+router.put("/sold", productController.updateSoldProduct);
 router.get("/product/:id", productController.getAProduct);
 router.put("/product/:id", productController.updateProduct);
 router.put("/product", productController.updateAllProduct);
