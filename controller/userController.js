@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Verify = require("../models/verifyModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 exports.register = async (req, res) => {
@@ -7,19 +8,18 @@ exports.register = async (req, res) => {
   //   username,
   //   password,
   // });
-  const salt = await bcrypt.genSaltSync(12);
-  const hashedPassword = await bcrypt.hashSync(password, salt);
 
   try {
     const user = new User({
       email,
       username,
-      password: hashedPassword,
+      password,
       carts: [],
       admin: 0,
       likes: [],
     });
     await user.save();
+    await Verify.findOneAndDelete({ email });
     res.status(200).json({
       success: true,
       data: req.body,
@@ -32,6 +32,118 @@ exports.register = async (req, res) => {
         message: `${Object.keys(error.keyValue)} is already existed`,
       });
     }
+  }
+};
+
+exports.verifyRegister = async (req, res) => {
+  try {
+    const { email, username, password } = req.body;
+    // User.create({
+    //   username,
+    //   password,
+    // });
+    const salt = await bcrypt.genSaltSync(12);
+    const hashedPassword = await bcrypt.hashSync(password, salt);
+    const isEmail = await Verify.findOneAndUpdate(
+      { email },
+      { email, username, password: hashedPassword }
+    );
+    if (isEmail) {
+      return res.status(200).json({
+        success: true,
+        message: "Saved",
+      });
+    }
+    const isUsername = await Verify.findOneAndUpdate(
+      { username },
+      { email, username, password: hashedPassword }
+    );
+    if (isUsername) {
+      return res.status(200).json({
+        success: true,
+        message: "Saved",
+      });
+    }
+
+    const user = new Verify({
+      email,
+      username,
+      password: hashedPassword,
+    });
+    await user.save();
+    res.status(200).json({
+      success: true,
+      message: "Saved",
+    });
+  } catch (error) {
+    console.log(JSON.stringify(error, null, 2));
+    if (error.code === 11000) {
+      res.status(400).json({
+        success: false,
+        message: `${Object.keys(error.keyValue)} is already existed`,
+      });
+    }
+  }
+};
+
+exports.getVerify = async (req, res) => {
+  try {
+    const email = req.params.email;
+    const data = await Verify.findOne({ email });
+    const filterData = {
+      email: data.email,
+      username: data.username,
+      password: data.password,
+    };
+    console.log("data:", data);
+    res.status(200).json({
+      success: true,
+      data: filterData,
+    });
+  } catch (error) {
+    console.log(JSON.stringify(error, null, 2));
+    if (error.code === 11000) {
+      res.status(400).json({
+        success: false,
+        message: `${Object.keys(error.keyValue)} is already existed`,
+      });
+    }
+  }
+};
+
+exports.checkExistUser = async (req, res) => {
+  try {
+    const { email, username } = req.body;
+
+    if (!email || !username) {
+      return res.status(500).json({
+        success: false,
+        message: "Invalid Input",
+      });
+    }
+    const isEmail = await User.findOne({ email });
+    const isUsername = await User.findOne({ username });
+
+    if (isEmail) {
+      return res.status(200).json({
+        success: false,
+        message: "Email already existed!",
+      });
+    }
+
+    if (isUsername) {
+      return res.status(200).json({
+        success: false,
+        message: "Username already existed!",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User allowed!",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, state: "invalid ID" });
   }
 };
 
