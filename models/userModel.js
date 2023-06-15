@@ -6,31 +6,31 @@ const UserSchema = new Schema(
   {
     email: {
       type: String,
-      require: true,
+      required: true,
       unique: true,
     },
     username: {
       type: String,
-      require: true,
+      required: true,
       unique: false,
     },
 
     password: {
       type: String,
-      require: true,
+      required: true,
     },
     admin: {
       type: Number,
-      require: true,
+      required: true,
     },
     carts: {
       type: Array,
-      require: true,
+      required: true,
     },
 
     likes: {
       type: Array,
-      require: true,
+      required: true,
     },
   },
 

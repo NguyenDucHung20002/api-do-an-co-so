@@ -6,7 +6,7 @@ const StatisticSchema = new Schema(
   {
     month: {
       type: String,
-      require: true,
+      required: true,
     },
     revenue: {
       type: Number,

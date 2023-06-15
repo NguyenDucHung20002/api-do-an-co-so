@@ -15,13 +15,13 @@ exports.addProduct = async (req, res) => {
     const user = jwt.verify(token, key);
     const users = await User.findOne({ email: user.email });
     if (users && users.admin > 0) {
-      const { name, img, imgBg, detail, message, price, rating } = req.body;
+      const { name, img, imgBg, detail, state, price, rating } = req.body;
       const product = {
         name,
         img,
         imgBg,
         detail,
-        message,
+        state,
         price,
         rating,
         sold: 0,

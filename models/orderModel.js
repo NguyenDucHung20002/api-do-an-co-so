@@ -6,47 +6,47 @@ const OrderSchema = new Schema(
   {
     userId: {
       type: String,
-      require: true,
+      required: true,
     },
     fullName: {
       type: String,
-      require: true,
+      required: true,
     },
     streetAddress: {
       type: String,
-      require: true,
+      required: true,
     },
     city: {
       type: String,
-      require: true,
+      required: true,
     },
     phone: {
       type: String,
-      require: true,
+      required: true,
     },
     email: {
       type: String,
-      require: true,
+      required: true,
     },
     datetime: {
       type: String,
-      require: true,
+      required: true,
     },
     orderId: {
       type: String,
-      require: true,
+      required: true,
     },
     total: {
       type: Number,
-      require: true,
+      required: true,
     },
     status: {
       type: Number,
-      require: true,
+      required: true,
     },
     products: {
       type: Array,
-      require: true,
+      required: true,
     },
   },
 
